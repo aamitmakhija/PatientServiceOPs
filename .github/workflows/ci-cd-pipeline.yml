@@ -20,12 +20,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
-      # Step 3: Log in to Docker Hub
+      # Step 3: Log in to Docker Hub using GitHub Secrets
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: amitmakhija2308  # Docker Hub Username
-          password: dckr_pat_5GN_2OPvtfBHGbrBT6p5T6uV5io  # Docker Hub Personal Access Token
+          username: ${{ secrets.DOCKER_USERNAME }}  # Use the Docker Hub Username from GitHub Secrets
+          password: ${{ secrets.DOCKER_PASSWORD }}  # Use the Docker Hub PAT from GitHub Secrets
 
       # Step 4: Build Docker images
       - name: Build and Tag Docker images
