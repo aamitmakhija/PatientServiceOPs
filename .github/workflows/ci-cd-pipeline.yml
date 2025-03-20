@@ -1,0 +1,46 @@
+name: Docker Image Build and Push
+
+on:
+  push:
+    branches:
+      - main  # Trigger the workflow when changes are pushed to the main branch
+  pull_request:
+    branches:
+      - main  # Trigger the workflow when a pull request is made to the main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the code from GitHub
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      # Step 2: Set up Docker Buildx (needed for multi-platform support)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      # Step 3: Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: amitmakhija2308  # Docker Hub Username
+          password: dckr_pat_5GN_2OPvtfBHGbrBT6p5T6uV5io  # Docker Hub Personal Access Token
+
+      # Step 4: Build Docker images
+      - name: Build and Tag Docker images
+        run: |
+          docker build -t amitmakhija2308/apigateway:v3 ./api-gateway
+          docker build -t amitmakhija2308/ward-service:v3 ./04-WardService
+          docker build -t amitmakhija2308/admission-service:v3 ./03-AdmissionService
+          docker build -t amitmakhija2308/patient-service:v3 ./02-PatientService
+          docker build -t amitmakhija2308/auth-service:v3 ./01-AuthService
+
+      # Step 5: Push Docker images to Docker Hub
+      - name: Push Docker images to Docker Hub
+        run: |
+          docker push amitmakhija2308/apigateway:v3
+          docker push amitmakhija2308/ward-service:v3
+          docker push amitmakhija2308/admission-service:v3
+          docker push amitmakhija2308/patient-service:v3
+          docker push amitmakhija2308/auth-service:v3

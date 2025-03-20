@@ -1,0 +1,51 @@
+services:
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: .
+    ports:
+      - "5005:5005"
+    networks:
+      - patient-system
+    env_file:
+      - .env
+
+  auth-service:
+    container_name: auth-service
+    build:
+      context: ../01-AuthService
+    ports:
+      - "5001:5001"
+    networks:
+      - patient-system
+
+  patient-service:
+    container_name: patient-service
+    build:
+      context: ../02-PatientService
+    ports:
+      - "5002:5002"
+    networks:
+      - patient-system
+
+  admission-service:
+    container_name: admission-service
+    build:
+      context: ../03-AdmissionService
+    ports:
+      - "5003:5003"
+    networks:
+      - patient-system
+
+  ward-service:
+    container_name: ward-service
+    build:
+      context: ../04-WardService
+    ports:
+      - "5004:5004"
+    networks:
+      - patient-system
+
+networks:
+  patient-system:
+    driver: bridge

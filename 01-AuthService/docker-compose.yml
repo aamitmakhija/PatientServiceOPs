@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  auth-service:
+    container_name: auth-service
+    build:
+      context: .  # Build from the current directory
+    ports:
+      - "5001:5001"  # Expose port 5001 for auth service
+    environment:
+      - PORT=5001  # Set PORT environment variable
+    networks:
+      - patient-system  # Connect to patient-system network
+
+networks:
+  patient-system:
+    driver: bridge  # Custom network for communication with other services (if needed)

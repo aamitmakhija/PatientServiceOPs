@@ -1,0 +1,23 @@
+# Use official Node.js image as the base
+FROM node:18
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the package.json and package-lock.json first to install dependencies
+COPY package*.json ./
+
+# Install all dependencies including http-proxy-middleware
+RUN npm install
+
+# Copy the rest of the application code
+COPY . .
+
+# Ensure the .env file is also copied
+COPY .env .env
+
+# Expose the port that the API Gateway will listen on
+EXPOSE 5005
+
+# Command to run the application
+CMD ["npm", "start"]

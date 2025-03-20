@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  ward-service:
+    container_name: ward-service  # Define the name for the ward service container
+    build:
+      context: .  # Build from the current directory
+    ports:
+      - "5004:5004"  # Expose port 5004 for the ward service
+    environment:
+      - PORT=5004  # Set the environment variable for port
+    networks:
+      - patient-system  # Define the network it belongs to
+
+networks:
+  patient-system:
+    driver: bridge  # Use a custom bridge network
