@@ -4,12 +4,15 @@ pipeline {
     environment {
         DOCKER_USERNAME = credentials('docker-username') // Use the ID from Jenkins credentials
         DOCKER_PASSWORD = credentials('docker-password') // Use the ID from Jenkins credentials
+        NODEJS_HOME = tool name: 'NodeJS', type: 'NodeJSInstallation' // Add this line to set NodeJS path
+        PATH = "${NODEJS_HOME}/bin:${env.PATH}" // Ensure npm and node are accessible
     }
 
     stages {
         stage('Install Dependencies') {
             steps {
                 script {
+                    // Install Node.js dependencies
                     sh 'npm install'
                 }
             }
@@ -18,6 +21,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
+                    // Run tests using Mocha and Chai
                     sh 'npm run test'
                 }
             }
@@ -26,6 +30,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
+                    // Build Docker images for your services
                     sh 'docker build -t amitmakhija2308/apigateway:${BUILD_ID} ./api-gateway'
                     sh 'docker build -t amitmakhija2308/ward-service:${BUILD_ID} ./04-WardService'
                     sh 'docker build -t amitmakhija2308/admission-service:${BUILD_ID} ./03-AdmissionService'
@@ -38,7 +43,9 @@ pipeline {
         stage('Push Docker Image to Docker Hub') {
             steps {
                 script {
+                    // Login to Docker Hub
                     sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
+                    // Push Docker images to Docker Hub
                     sh 'docker push amitmakhija2308/apigateway:${BUILD_ID}'
                     sh 'docker push amitmakhija2308/ward-service:${BUILD_ID}'
                     sh 'docker push amitmakhija2308/admission-service:${BUILD_ID}'
