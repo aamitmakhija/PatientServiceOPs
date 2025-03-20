@@ -4,7 +4,8 @@
   "description": "API Gateway for routing requests to services",
   "main": "src/app.js",
   "scripts": {
-    "start": "node src/app.js"
+    "start": "node src/app.js",
+    "test": "mocha './test/**/*.js'"  
   },
   "dependencies": {
     "express": "^4.18.1",
@@ -12,6 +13,8 @@
     "dotenv": "^10.0.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.15"
+    "nodemon": "^2.0.15",
+    "mocha": "^10.0.0",
+    "chai": "^4.3.4"
   }
 }
