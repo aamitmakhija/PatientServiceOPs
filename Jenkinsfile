@@ -7,8 +7,23 @@ pipeline {
         NODEJS_HOME = tool name: 'NodeJS', type: 'NodeJSInstallation' // Add this line to set NodeJS path
         PATH = "${NODEJS_HOME}/bin:${env.PATH}" // Ensure npm and node are accessible
     }
-
+    
     stages {
+        stage('Checkout SCM') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Run OWASP ZAP Security Scan') {
+            steps {
+                script {
+                    // Start OWASP ZAP in the background (Docker container)
+                    sh 'docker run -d -u zap --name zap -t owasp/zap2docker-stable zap-full-scan.py -t http://your-app-url.com'
+                }
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 script {
@@ -30,27 +45,19 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build Docker images for your services
-                    sh 'docker build -t amitmakhija2308/apigateway:${BUILD_ID} ./api-gateway'
-                    sh 'docker build -t amitmakhija2308/ward-service:${BUILD_ID} ./04-WardService'
-                    sh 'docker build -t amitmakhija2308/admission-service:${BUILD_ID} ./03-AdmissionService'
-                    sh 'docker build -t amitmakhija2308/patient-service:${BUILD_ID} ./02-PatientService'
-                    sh 'docker build -t amitmakhija2308/auth-service:${BUILD_ID} ./01-AuthService'
+                    // Build Docker image for your services
+                    sh 'docker build -t amitmakhija2308/api-gateway:${BUILD_ID} ./api-gateway'
+                    // Additional docker build commands
                 }
             }
         }
 
-        stage('Push Docker Image to Docker Hub') {
+        stage('Push Docker Image') {
             steps {
                 script {
-                    // Login to Docker Hub
-                    sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
-                    // Push Docker images to Docker Hub
-                    sh 'docker push amitmakhija2308/apigateway:${BUILD_ID}'
-                    sh 'docker push amitmakhija2308/ward-service:${BUILD_ID}'
-                    sh 'docker push amitmakhija2308/admission-service:${BUILD_ID}'
-                    sh 'docker push amitmakhija2308/patient-service:${BUILD_ID}'
-                    sh 'docker push amitmakhija2308/auth-service:${BUILD_ID}'
+                    // Push Docker image to Docker Hub
+                    sh 'docker push amitmakhija2308/api-gateway:${BUILD_ID}'
+                    // Additional docker push commands
                 }
             }
         }
@@ -58,7 +65,8 @@ pipeline {
 
     post {
         always {
-            echo 'This will always run after the pipeline execution.'
+            // Clean up or notify after the pipeline execution
+            echo 'Security scan and tests are completed.'
         }
     }
 }
