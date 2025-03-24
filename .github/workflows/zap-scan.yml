@@ -1,0 +1,34 @@
+name: ZAP Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  zap-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Start API Gateway (Docker Compose)
+        run: docker-compose up -d api-gateway
+
+      - name: Wait for API to be ready
+        run: |
+          echo "Waiting for API to start..."
+          sleep 15
+
+      - name: Run ZAP Baseline Scan
+        run: |
+          docker run -v $(pwd):/zap/wrk/:rw --network="host" owasp/zap2docker-stable zap-baseline.py \
+            -t http://localhost:5005 \
+            -r zap-report.html || true
+
+      - name: Upload ZAP HTML Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-security-report
+          path: zap-report.html
