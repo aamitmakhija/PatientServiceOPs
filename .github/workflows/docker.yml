@@ -9,7 +9,6 @@ on:
       - '02-PatientService/**'
       - '03-AdmissionService/**'
       - '04-WardService/**'
-      - '.github/workflows/docker.yml'
     branches: [ main ]
   pull_request:
     paths:
@@ -19,7 +18,6 @@ on:
       - '02-PatientService/**'
       - '03-AdmissionService/**'
       - '04-WardService/**'
-      - '.github/workflows/docker.yml'
     branches: [ main ]
 
 jobs:

@@ -6,14 +6,12 @@ on:
       - 'test/**'
       - 'package.json'
       - '.nycrc'
-      - '.github/workflows/ci.yml'
     branches: [ main ]
   pull_request:
     paths:
       - 'test/**'
       - 'package.json'
       - '.nycrc'
-      - '.github/workflows/ci.yml'
     branches: [ main ]
 
 jobs:
