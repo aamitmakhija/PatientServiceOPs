@@ -2,8 +2,24 @@ name: Docker Image Build and Push
 
 on:
   push:
+    paths:
+      - 'docker-compose.yml'
+      - '01-AuthService/**'
+      - '02-PatientService/**'
+      - '03-AdmissionService/**'
+      - '04-WardService/**'
+      - 'api-gateway/**'
+      - '.github/workflows/docker.yml'
     branches: [ main ]
   pull_request:
+    paths:
+      - 'docker-compose.yml'
+      - '01-AuthService/**'
+      - '02-PatientService/**'
+      - '03-AdmissionService/**'
+      - '04-WardService/**'
+      - 'api-gateway/**'
+      - '.github/workflows/docker.yml'
     branches: [ main ]
 
 jobs:
