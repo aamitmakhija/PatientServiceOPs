@@ -33,10 +33,23 @@ services:
     build:
       context: ./api-gateway
     ports:
-      - "8080:8080"
+      - "5005:5005"
     depends_on:
       - auth-service
       - patient-service
       - admission-service
       - ward-service
     restart: unless-stopped
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
