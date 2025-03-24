@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  auth-service:
+    build:
+      context: ./01-AuthService
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+  patient-service:
+    build:
+      context: ./02-PatientService
+    ports:
+      - "5002:5002"
+    restart: unless-stopped
+
+  admission-service:
+    build:
+      context: ./03-AdmissionService
+    ports:
+      - "5003:5003"
+    restart: unless-stopped
+
+  ward-service:
+    build:
+      context: ./04-WardService
+    ports:
+      - "5004:5004"
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - patient-service
+      - admission-service
+      - ward-service
+    restart: unless-stopped

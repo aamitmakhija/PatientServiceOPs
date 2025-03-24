@@ -4,6 +4,9 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const healthRoutes = require('./routes/health'); // Health route import
+app.use('/health', healthRoutes); // Correctly register health route
+app.use(morgan('combined'));
 
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");  // Authentication routes
@@ -25,11 +28,6 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use("/api/auth", authRoutes);  // Mount auth routes at /api/auth
 app.use("/api/admissions", admissionRoutes); // Admission service routes
 app.use("/api/wards", wardRoutes); // Ward service routes
-
-// Health check route
-app.get("/", (req, res) => {
-  res.status(200).json({ message: "Service is running..." });
-});
 
 // Global error handler
 app.use((err, req, res, next) => {
