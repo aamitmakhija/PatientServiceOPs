@@ -52,7 +52,9 @@ pipeline {
     post {
         always {
             echo 'Security scan and pipeline completed.'
-            archiveArtifacts artifacts: 'zap-report.html', fingerprint: true
+            script {
+                archiveArtifacts artifacts: 'zap-report.html', fingerprint: true
+            }
         }
     }
 }
