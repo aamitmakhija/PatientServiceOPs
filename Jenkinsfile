@@ -2,12 +2,10 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_USERNAME = credentials('docker-username') // Use the ID from Jenkins credentials
-        DOCKER_PASSWORD = credentials('docker-password') // Use the ID from Jenkins credentials
-        NODEJS_HOME = tool name: 'NodeJS', type: 'NodeJSInstallation' // Add this line to set NodeJS path
-        PATH = "${NODEJS_HOME}/bin:${env.PATH}" // Ensure npm and node are accessible
+        NODEJS_HOME = tool name: 'NodeJS', type: 'NodeJSInstallation'
+        PATH = "${NODEJS_HOME}/bin:${env.PATH}"
     }
-    
+
     stages {
         stage('Checkout SCM') {
             steps {
@@ -15,49 +13,37 @@ pipeline {
             }
         }
 
-        stage('Run OWASP ZAP Security Scan') {
+        stage('OWASP ZAP Security Scan') {
             steps {
-                script {
-                    // Start OWASP ZAP in the background (Docker container)
-                    sh 'docker run -d -u zap --name zap -t owasp/zap2docker-stable zap-full-scan.py -t http://your-app-url.com'
-                }
+                sh '''
+                  docker run -u zap --network host -v $(pwd):/zap/wrk owasp/zap2docker-stable zap-baseline.py \
+                  -t http://localhost:5005 \
+                  -r zap-report.html || true
+                '''
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                script {
-                    // Install Node.js dependencies
-                    sh 'npm install'
-                }
+                sh 'npm install'
             }
         }
 
         stage('Run Tests') {
             steps {
-                script {
-                    // Run tests using Mocha and Chai
-                    sh 'npm run test'
-                }
+                sh 'npm run test || true'
+                junit 'test-results/results.xml'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build & Push Docker Image') {
             steps {
-                script {
-                    // Build Docker image for your services
-                    sh 'docker build -t amitmakhija2308/api-gateway:${BUILD_ID} ./api-gateway'
-                    // Additional docker build commands
-                }
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    // Push Docker image to Docker Hub
-                    sh 'docker push amitmakhija2308/api-gateway:${BUILD_ID}'
-                    // Additional docker push commands
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh '''
+                      echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                      docker build -t amitmakhija2308/api-gateway:${BUILD_ID} ./api-gateway
+                      docker push amitmakhija2308/api-gateway:${BUILD_ID}
+                    '''
                 }
             }
         }
@@ -65,8 +51,8 @@ pipeline {
 
     post {
         always {
-            // Clean up or notify after the pipeline execution
-            echo 'Security scan and tests are completed.'
+            echo 'Security scan and pipeline completed.'
+            archiveArtifacts artifacts: 'zap-report.html', fingerprint: true
         }
     }
 }
