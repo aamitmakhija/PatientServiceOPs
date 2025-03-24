@@ -2,8 +2,14 @@ name: ZAP Security Scan
 
 on:
   push:
+    paths:
+      - 'api-gateway/**'
+      - '.github/workflows/zap-scan.yml'
     branches: [ main ]
   pull_request:
+    paths:
+      - 'api-gateway/**'
+      - '.github/workflows/zap-scan.yml'
     branches: [ main ]
 
 jobs:
