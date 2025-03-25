@@ -3,28 +3,31 @@ const chaiHttp = require('chai-http');
 const nock = require('nock');
 const app = require('../../api-gateway/src/app');
 
+const expect = chai.expect;
 chai.use(chaiHttp);
-const { expect } = chai;
 
 describe('Unit Test: /admission/assign route', function () {
-  const BASE_URL = process.env.ADMISSION_SERVICE_URL || 'http://localhost:5003';
-
   afterEach(() => {
     nock.cleanAll();
   });
 
-  it('should assign a patient to a ward', async function () {
-    const payload = { patientId: '123', wardId: 'wardA' };
+  it('should assign a patient to a ward', function (done) {
+    const payload = {
+      patientId: '123',
+      wardId: 'W1',
+    };
 
-    nock(BASE_URL)
+    nock('http://localhost:5003')
       .post('/assign', payload)
-      .reply(200, { message: 'Patient assigned successfully' });
+      .reply(200, { message: 'Assigned successfully' });
 
-    const res = await chai.request(app)
+    chai.request(app)
       .post('/admission/assign')
-      .send(payload);
-    
-    expect(res).to.have.status(200);
-    expect(res.body).to.have.property('message').eql('Patient assigned successfully');
+      .send(payload)
+      .end((err, res) => {
+        expect(res).to.have.status(200);
+        expect(res.body).to.have.property('message').eql('Assigned successfully');
+        done();
+      });
   });
 });

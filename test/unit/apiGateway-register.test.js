@@ -3,43 +3,45 @@ const chaiHttp = require('chai-http');
 const nock = require('nock');
 const app = require('../../api-gateway/src/app');
 
+const expect = chai.expect;
 chai.use(chaiHttp);
-const { expect } = chai;
 
 describe('Unit Test: /patient/register route', function () {
-  const BASE_URL = process.env.PATIENT_SERVICE_URL || 'http://localhost:5002';
-
   afterEach(() => {
     nock.cleanAll();
   });
 
-  it('should register a patient via mocked PatientService', async function () {
+  it('should register a patient via mocked PatientService', function (done) {
     const payload = { name: 'Jane Doe', age: 28 };
 
-    nock(BASE_URL)
-      .post('/register')
+    nock('http://localhost:5002')
+      .post('/register', payload)
       .reply(201, { message: 'Patient registered successfully' });
 
-    const res = await chai.request(app)
+    chai.request(app)
       .post('/patient/register')
-      .send(payload);
-    
-    expect(res).to.have.status(201);
-    expect(res.body).to.have.property('message').eql('Patient registered successfully');
+      .send(payload)
+      .end((err, res) => {
+        expect(res).to.have.status(201);
+        expect(res.body).to.have.property('message').eql('Patient registered successfully');
+        done();
+      });
   });
 
-  it('should return 400 if registration fails', async function () {
-    const invalidPayload = {}; // Mock invalid data
+  it('should return 400 if registration fails', function (done) {
+    const payload = { name: 'Jane Doe' }; // Missing age to simulate failure
 
-    nock(BASE_URL)
-      .post('/register', invalidPayload)
-      .reply(400, { message: 'Invalid data' });
+    nock('http://localhost:5002')
+      .post('/register', payload)
+      .reply(400, { message: 'Invalid registration data' });
 
-    const res = await chai.request(app)
+    chai.request(app)
       .post('/patient/register')
-      .send(invalidPayload);
-    
-    expect(res).to.have.status(400);
-    expect(res.body).to.have.property('message').eql('Invalid data');
+      .send(payload)
+      .end((err, res) => {
+        expect(res).to.have.status(400);
+        expect(res.body).to.have.property('message').eql('Invalid registration data');
+        done();
+      });
   });
 });

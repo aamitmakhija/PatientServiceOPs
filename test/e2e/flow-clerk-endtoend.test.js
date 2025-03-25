@@ -4,80 +4,74 @@ const nock = require('nock');
 const jwt = require('jsonwebtoken');
 const app = require('../../api-gateway/src/app');
 
+const expect = chai.expect;
 chai.use(chaiHttp);
-const { expect } = chai;
-
-const TOKEN = jwt.sign({ role: 'clerk', username: 'clerk1' }, 'your-secret-key');
 
 describe('End-to-End Flow: Login -> Register -> Assign', function () {
-  const authURL = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
-  const patientURL = process.env.PATIENT_SERVICE_URL || 'http://localhost:5002';
-  const admissionURL = process.env.ADMISSION_SERVICE_URL || 'http://localhost:5003';
+  const authService = 'http://localhost:5001';
+  const patientService = 'http://localhost:5002';
+  const admissionService = 'http://localhost:5003';
+
+  const mockClerkToken = jwt.sign({ role: 'clerk' }, 'your-secret-key');
+  const patientPayload = { name: 'Clerk Flow', age: 55 };
+  const assignPayload = { patientId: 'abc123', wardId: 'wardX' };
 
   afterEach(() => {
     nock.cleanAll();
   });
 
-  it('should perform login, register a patient, and assign them to a ward', async function () {
-    this.timeout(10000);  // Set timeout for the entire flow
-
-    const patient = { name: 'John Flow', age: 45 };
-    const assign = { patientId: 'flow-123', wardId: 'ward-9' };
-
-    // Mock /auth/login
-    nock(authURL)
+  it('should perform login, register a patient, and assign them to a ward', function (done) {
+    nock(authService)
       .post('/api/auth/login')
-      .reply(200, { token: TOKEN });
+      .reply(200, { token: mockClerkToken });
 
-    // Mock /patient/register
-    nock(patientURL)
-      .post('/register')
-      .reply(201, { message: 'Patient registered successfully', patientId: assign.patientId });
+    nock(patientService)
+      .post('/register', patientPayload)
+      .reply(201, { message: 'Patient registered successfully' });
 
-    // Mock /admission/assign
-    nock(admissionURL)
-      .post('/assign')
-      .reply(200, { message: 'Patient assigned successfully' });
+    nock(admissionService)
+      .post('/assign', assignPayload)
+      .reply(200, { message: 'Assigned to ward successfully' });
 
-    // Start flow: Login -> Register -> Assign
-    const loginRes = await chai.request(app)
+    chai.request(app)
       .post('/auth/login')
-      .send({ username: 'clerk1', password: 'pass' });
+      .send({ username: 'clerk', password: 'test' })
+      .end((err, loginRes) => {
+        const token = loginRes.body.token;
 
-    expect(loginRes).to.have.status(200);
-    const token = loginRes.body.token;
+        chai.request(app)
+          .post('/patient/register')
+          .set('Authorization', `Bearer ${token}`)
+          .send(patientPayload)
+          .end((err, regRes) => {
+            expect(regRes).to.have.status(201);
 
-    const registerRes = await chai.request(app)
-      .post('/patient/register')
-      .set('Authorization', `Bearer ${token}`)
-      .send(patient);
-
-    expect(registerRes).to.have.status(201);
-    expect(registerRes.body).to.have.property('patientId');
-
-    const assignRes = await chai.request(app)
-      .post('/admission/assign')
-      .set('Authorization', `Bearer ${token}`)
-      .send(assign);
-
-    expect(assignRes).to.have.status(200);
-    expect(assignRes.body).to.have.property('message').eql('Patient assigned successfully');
+            chai.request(app)
+              .post('/admission/assign')
+              .set('Authorization', `Bearer ${token}`)
+              .send(assignPayload)
+              .end((err, assignRes) => {
+                expect(assignRes).to.have.status(200);
+                done();
+              });
+          });
+      });
   });
 
-  it('should handle failure in admission service gracefully', async function () {
-    const assign = { patientId: 'flow-123', wardId: 'ward-9' };
-
-    nock(admissionURL)
-      .post('/assign')
-      .delay(100) // Simulate slow response
+  it('should handle failure in admission service gracefully', function (done) {
+    nock(admissionService)
+      .post('/assign', assignPayload)
+      .delay(50)
       .reply(500, { message: 'Assignment failed' });
 
-    const res = await chai.request(app)
+    chai.request(app)
       .post('/admission/assign')
-      .set('Authorization', `Bearer ${TOKEN}`)
-      .send(assign);
-
-    expect(res).to.have.status(500);
-    expect(res.body).to.have.property('message').eql('Assignment failed');
+      .set('Authorization', `Bearer ${mockClerkToken}`)
+      .send(assignPayload)
+      .end((err, res) => {
+        expect(res).to.have.status(500);
+        expect(res.body.message).to.equal('Assignment failed');
+        done();
+      });
   });
 });

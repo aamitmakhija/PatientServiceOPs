@@ -1,22 +1,43 @@
-name: Docker Image Build and Push
+name: CI/CD Pipeline with Matrix and Central Tests
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+    paths:
+      - '**.js'
+      - '**.json'
+      - '**/Dockerfile'
+      - 'docker-compose.yml'
+      - 'test/**'
+      - 'package.json'
+      - '.nycrc'
+      - '.github/workflows/**'
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - 01-AuthService
+          - 02-PatientService
+          - 03-AdmissionService
+          - 04-WardService
+          - api-gateway
+
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -24,18 +45,49 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and Tag Docker images
+      - name: Install Dependencies and Run Lint/Test
         run: |
-          docker build -t amitmakhija2308/apigateway:v3 ./api-gateway
-          docker build -t amitmakhija2308/ward-service:v3 ./04-WardService
-          docker build -t amitmakhija2308/admission-service:v3 ./03-AdmissionService
-          docker build -t amitmakhija2308/patient-service:v3 ./02-PatientService
-          docker build -t amitmakhija2308/auth-service:v3 ./01-AuthService
+          cd ./${{ matrix.service }}
+          npm ci
+          npx eslint .
+          npx nyc mocha
 
-      - name: Push Docker images to Docker Hub
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-${{ matrix.service }}
+          path: ${{ matrix.service }}/coverage/
+
+      - name: Build and Push Docker Image
         run: |
-          docker push amitmakhija2308/apigateway:v3
-          docker push amitmakhija2308/ward-service:v3
-          docker push amitmakhija2308/admission-service:v3
-          docker push amitmakhija2308/patient-service:v3
-          docker push amitmakhija2308/auth-service:v3
+          docker build -t amitmakhija2308/${{ matrix.service }}:${{ github.sha }} ./${{ matrix.service }}
+          docker tag amitmakhija2308/${{ matrix.service }}:${{ github.sha }} amitmakhija2308/${{ matrix.service }}:latest
+          docker push amitmakhija2308/${{ matrix.service }}:${{ github.sha }}
+          docker push amitmakhija2308/${{ matrix.service }}:latest
+
+  run-central-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Central Test Suite
+        run: npm test
+
+      - name: Generate Coverage Report
+        run: npm run coverage
+
+      - name: Upload Root Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-root
+          path: coverage/

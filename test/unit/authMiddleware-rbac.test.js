@@ -1,74 +1,84 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
+const nock = require('nock');
 const jwt = require('jsonwebtoken');
 const app = require('../../api-gateway/src/app');
-const nock = require('nock');
 
+const expect = chai.expect;
 chai.use(chaiHttp);
-const { expect } = chai;
-
-const patientService = process.env.PATIENT_SERVICE_URL || 'http://localhost:5002';
-const validPayload = { name: 'Test RBAC', age: 40 };
-
-const clerkToken = jwt.sign({ role: 'clerk', username: 'clerk1' }, 'secret-key');
-const doctorToken = jwt.sign({ role: 'doctor', username: 'doc1' }, 'secret-key');
-const invalidToken = 'Bearer malformed.token.value';
 
 describe('RBAC Middleware Tests: /patient/register', function () {
-  afterEach(() => nock.cleanAll());
+  const patientService = 'http://localhost:5002';
+  const payload = { name: 'John RBAC', age: 50 };
 
-  it('should allow a clerk to register a patient', async () => {
-    nock(patientService)
-      .post('/register')
-      .reply(201, { message: 'Patient registered successfully' });
+  const clerkToken = jwt.sign({ role: 'clerk' }, 'your-secret-key');
+  const doctorToken = jwt.sign({ role: 'doctor' }, 'your-secret-key');
+  const invalidToken = 'invalid.token.value';
 
-    const res = await chai.request(app)
-      .post('/patient/register')
-      .set('Authorization', `Bearer ${clerkToken}`)
-      .send(validPayload);
-
-    expect(res).to.have.status(201);
-    expect(res.body).to.have.property('message', 'Patient registered successfully');
+  afterEach(() => {
+    nock.cleanAll();
   });
 
-  it('should reject a doctor from registering a patient', async () => {
+  it('should allow a clerk to register a patient', function (done) {
+    nock(patientService)
+      .post('/register')
+      .reply(201, { message: 'Registered by clerk' });
+
+    chai.request(app)
+      .post('/patient/register')
+      .set('Authorization', `Bearer ${clerkToken}`)
+      .send(payload)
+      .end((err, res) => {
+        expect(res).to.have.status(201);
+        expect(res.body.message).to.equal('Registered by clerk');
+        done();
+      });
+  });
+
+  it('should reject a doctor from registering a patient', function (done) {
     nock(patientService)
       .post('/register')
       .reply(403, { message: 'Forbidden' });
 
-    const res = await chai.request(app)
+    chai.request(app)
       .post('/patient/register')
       .set('Authorization', `Bearer ${doctorToken}`)
-      .send(validPayload);
-
-    expect(res).to.have.status(403);
-    expect(res.body).to.have.property('message', 'Forbidden');
+      .send(payload)
+      .end((err, res) => {
+        expect(res).to.have.status(403);
+        expect(res.body.message).to.equal('Forbidden');
+        done();
+      });
   });
 
-  it('should reject a request with no token', async () => {
+  it('should reject a request with no token', function (done) {
     nock(patientService)
       .post('/register')
       .reply(401, { message: 'Unauthorized' });
 
-    const res = await chai.request(app)
+    chai.request(app)
       .post('/patient/register')
-      .send(validPayload);
-
-    expect(res).to.have.status(401);
-    expect(res.body).to.have.property('message', 'Unauthorized');
+      .send(payload)
+      .end((err, res) => {
+        expect(res).to.have.status(401);
+        expect(res.body.message).to.equal('Unauthorized');
+        done();
+      });
   });
 
-  it('should reject a request with an invalid token', async () => {
+  it('should reject a request with an invalid token', function (done) {
     nock(patientService)
       .post('/register')
       .reply(401, { message: 'Invalid token' });
 
-    const res = await chai.request(app)
+    chai.request(app)
       .post('/patient/register')
-      .set('Authorization', invalidToken)
-      .send(validPayload);
-
-    expect(res).to.have.status(401);
-    expect(res.body).to.have.property('message', 'Invalid token');
+      .set('Authorization', `Bearer ${invalidToken}`)
+      .send(payload)
+      .end((err, res) => {
+        expect(res).to.have.status(401);
+        expect(res.body.message).to.equal('Invalid token');
+        done();
+      });
   });
 });
