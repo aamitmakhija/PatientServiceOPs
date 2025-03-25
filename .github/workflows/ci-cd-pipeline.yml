@@ -53,10 +53,17 @@ jobs:
           npx nyc mocha
 
       - name: Upload Coverage Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.3
         with:
           name: coverage-${{ matrix.service }}
           path: ${{ matrix.service }}/coverage/
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ matrix.service }}/coverage/lcov.info
+          name: ${{ matrix.service }}
 
       - name: Build and Push Docker Image
         run: |
@@ -64,6 +71,20 @@ jobs:
           docker tag amitmakhija2308/${{ matrix.service }}:${{ github.sha }} amitmakhija2308/${{ matrix.service }}:latest
           docker push amitmakhija2308/${{ matrix.service }}:${{ github.sha }}
           docker push amitmakhija2308/${{ matrix.service }}:latest
+
+      - name: Notify Slack on Success
+        if: success()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"Build and Deploy succeeded for ${{ github.repository }} on ${{ github.ref }}"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on Failure
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"Build or Deploy failed for ${{ github.repository }} on ${{ github.ref }}"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
 
   run-central-tests:
     runs-on: ubuntu-latest
@@ -87,7 +108,7 @@ jobs:
         run: npm run coverage
 
       - name: Upload Root Coverage Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.3
         with:
           name: coverage-root
           path: coverage/
