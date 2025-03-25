@@ -62,6 +62,14 @@ jobs:
           docker tag amitmakhija2308/${{ matrix.service }}:${{ github.sha }} amitmakhija2308/${{ matrix.service }}:latest
           docker push amitmakhija2308/${{ matrix.service }}:${{ github.sha }}
           docker push amitmakhija2308/${{ matrix.service }}:latest
+      
+      - name: Debug Email Vars
+        if: failure()
+        run: |
+          echo "SMTP_SERVER=${{ secrets.SMTP_SERVER }}"
+          echo "SMTP_PORT=${{ secrets.SMTP_PORT }}"
+          echo "SMTP_USERNAME set? ${{ secrets.SMTP_USERNAME != '' }}"
+          echo "MAIL_RECIPIENT set? ${{ secrets.MAIL_RECIPIENT != '' }}"      
 
       - name: Send Email on Failure via SMTP
         if: failure()
@@ -72,7 +80,7 @@ jobs:
           echo "CI/CD workflow failed on branch ${{ github.ref }}." >> email.txt
           echo "Check the GitHub Actions logs for more details." >> email.txt
 
-          curl --url "smtp://${{ secrets.SMTP_SERVER }}:${{ secrets.SMTP_PORT }}" \
+          curl --insecure --url "smtp://${{ secrets.SMTP_SERVER }}:${{ secrets.SMTP_PORT }}" \
             --ssl-reqd \
             --mail-from "${{ secrets.SMTP_USERNAME }}" \
             --mail-rcpt "${{ secrets.MAIL_RECIPIENT }}" \
