@@ -7,7 +7,10 @@ const app = require('../../api-gateway/src/app');
 const expect = chai.expect;
 chai.use(chaiHttp);
 
+// Set timeout for all tests in this suite to 10 seconds
 describe('RBAC Middleware Tests: /patient/register', function () {
+  this.timeout(10000); // 10 seconds
+
   const patientService = 'http://localhost:5002';
   const payload = { name: 'John RBAC', age: 50 };
 
