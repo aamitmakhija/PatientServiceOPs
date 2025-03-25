@@ -3,15 +3,6 @@ name: CI/CD Pipeline with Matrix and Central Tests
 on:
   push:
     branches: [main]
-    paths:
-      - '**.js'
-      - '**.json'
-      - '**/Dockerfile'
-      - 'docker-compose.yml'
-      - 'test/**'
-      - 'package.json'
-      - '.nycrc'
-      - '.github/workflows/**'
   pull_request:
     branches: [main]
 
