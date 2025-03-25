@@ -72,19 +72,21 @@ jobs:
           docker push amitmakhija2308/${{ matrix.service }}:${{ github.sha }}
           docker push amitmakhija2308/${{ matrix.service }}:latest
 
-      - name: Notify Slack on Success
-        if: success()
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"Build and Deploy succeeded for ${{ github.repository }} on ${{ github.ref }}"}' \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Notify Slack on Failure
+      - name: Send Email on Failure via SMTP
         if: failure()
         run: |
-          curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"Build or Deploy failed for ${{ github.repository }} on ${{ github.ref }}"}' \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
+          echo "Subject: CI/CD Failed for ${{ github.repository }}" > email.txt
+          echo "To: ${{ secrets.MAIL_RECIPIENT }}" >> email.txt
+          echo "" >> email.txt
+          echo "CI/CD workflow failed on branch ${{ github.ref }}." >> email.txt
+          echo "Check the GitHub Actions logs for more details." >> email.txt
+
+          curl --url "smtp://${{ secrets.SMTP_SERVER }}:${{ secrets.SMTP_PORT }}" \
+            --ssl-reqd \
+            --mail-from "${{ secrets.SMTP_USERNAME }}" \
+            --mail-rcpt "${{ secrets.MAIL_RECIPIENT }}" \
+            --upload-file email.txt \
+            --user "${{ secrets.SMTP_USERNAME }}:${{ secrets.SMTP_PASSWORD }}"
 
   run-central-tests:
     runs-on: ubuntu-latest
