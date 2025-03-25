@@ -1,5 +1,6 @@
 // src/middleware/roleMiddleware.js
-const { authorizeRole } = require("./authorizeRole");
+// eslint-disable-next-line no-unused-vars
+const { authorizeRole } = require('./authorizeRole');
 
 const authenticateRole = (role) => {
   return (req, res, next) => {
