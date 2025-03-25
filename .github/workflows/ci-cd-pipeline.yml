@@ -81,7 +81,7 @@ jobs:
           echo "Check the GitHub Actions logs for more details." >> email.txt
 
           curl --insecure --url "smtp://${{ secrets.SMTP_SERVER }}:${{ secrets.SMTP_PORT }}" \
-            --ssl-reqd \
+            --ssl --tlsv1.2 --insecure
             --mail-from "${{ secrets.SMTP_USERNAME }}" \
             --mail-rcpt "${{ secrets.MAIL_RECIPIENT }}" \
             --upload-file email.txt \
