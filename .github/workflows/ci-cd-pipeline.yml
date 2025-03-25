@@ -43,11 +43,11 @@ jobs:
           npx eslint .
           npx nyc mocha
 
-      - name: Upload Coverage Report
-        uses: actions/upload-artifact@v2
-        with:
-          name: coverage-${{ matrix.service }}
-          path: ${{ matrix.service }}/coverage/
+   #   - name: Upload Coverage Report
+    #    uses: actions/upload-artifact@v2
+     #   with:
+      #    name: coverage-${{ matrix.service }}
+       #   path: ${{ matrix.service }}/coverage/
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v3
@@ -100,8 +100,8 @@ jobs:
       - name: Generate Coverage Report
         run: npm run coverage
 
-      - name: Upload Root Coverage Report
-        uses: actions/upload-artifact@v2
-        with:
-          name: coverage-root
-          path: coverage/
+   #   - name: Upload Root Coverage Report
+    #    uses: actions/upload-artifact@v2
+     #   with:
+      #    name: coverage-root
+       #   path: coverage/
