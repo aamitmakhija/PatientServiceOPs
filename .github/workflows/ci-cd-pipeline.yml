@@ -53,7 +53,7 @@ jobs:
           npx nyc mocha
 
       - name: Upload Coverage Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: coverage-${{ matrix.service }}
           path: ${{ matrix.service }}/coverage/
@@ -110,7 +110,7 @@ jobs:
         run: npm run coverage
 
       - name: Upload Root Coverage Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: coverage-root
           path: coverage/
