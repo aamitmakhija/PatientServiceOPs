@@ -15,7 +15,7 @@ A microservices-based Patient Information System built using Node.js, MongoDB, D
 
 ---
 
-## 🚀 Features
+## Features
 
 - JWT-based authentication
 - Role-based access control (Admin, Clerk, Doctor, Nurse, Pathologist)
@@ -40,3 +40,6 @@ A microservices-based Patient Information System built using Node.js, MongoDB, D
 
 ```bash
 npm install
+
+
+for any queries, please write to amit_makhija@outlook.com
